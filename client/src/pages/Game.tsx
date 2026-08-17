@@ -16,11 +16,24 @@ import {
   Sparkles,
   Star,
   Trophy,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import HighScores from '@/components/HighScores';
 import { usePi } from '@/contexts/PiContext';
 import { copy, getInitialLanguage, setStoredLanguage, type Language } from '@/lib/i18n';
+import {
+  getSoundEnabled as getStoredSoundEnabled,
+  playInvalid,
+  playMatch,
+  playPause,
+  playSelect,
+  playStart,
+  playSwap,
+  playWin,
+  setSoundEnabled as setStoredSoundEnabled,
+} from '@/lib/sfx';
 
 type TileType = 'purple' | 'gold' | 'blue' | 'pink' | 'green';
 type Phase = 'ready' | 'playing' | 'paused' | 'over';
@@ -170,10 +183,11 @@ export default function Game() {
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
   const [moves, setMoves] = useState(MAX_MOVES);
-  const [phase, setPhase] = useState<Phase>('ready');
-  const [statusKey, setStatusKey] = useState<StatusKey>('ready');
+  const [phase, setPhase] = useState<Phase>('playing');
+  const [statusKey, setStatusKey] = useState<StatusKey>('playing');
   const [lastGain, setLastGain] = useState(0);
   const [resolving, setResolving] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => getStoredSoundEnabled());
   const demoMoveRef = useRef<[[number, number], [number, number]] | null>(null);
   const t = copy[language];
   const isArabic = language === 'ar';
@@ -194,6 +208,7 @@ export default function Game() {
     setStatusKey('playing');
     setPhase('playing');
     setResolving(false);
+    if (soundEnabled) playStart();
   };
 
   const finishGame = (finalScore: number) => {
@@ -206,11 +221,12 @@ export default function Game() {
   };
 
   const handleTileClick = (row: number, col: number) => {
-    if (phase !== 'playing' || resolving) return;
+    if (resolving || phase !== 'playing') return;
     const current: [number, number] = [row, col];
     if (!selected) {
       setSelected(current);
       setStatusKey('playing');
+      if (soundEnabled) playSelect();
       return;
     }
     if (selected[0] === row && selected[1] === col) {
@@ -228,9 +244,11 @@ export default function Game() {
 
     if (immediateMatches.size === 0) {
       setStatusKey('invalid');
+      if (soundEnabled) playInvalid();
       return;
     }
 
+    if (soundEnabled) playSwap();
     const result = resolveBoard(swapped);
     const nextScore = score + result.points;
     const nextMoves = moves - 1;
@@ -242,7 +260,11 @@ export default function Game() {
       setLastGain(result.points);
       setStatusKey('matched');
       setResolving(false);
-      if (nextMoves <= 0) finishGame(nextScore);
+      if (soundEnabled) playMatch(result.cascade);
+      if (nextMoves <= 0) {
+        if (soundEnabled) playWin();
+        finishGame(nextScore);
+      }
     }, 150);
   };
 
@@ -250,6 +272,13 @@ export default function Game() {
     const next = isArabic ? 'en' : 'ar';
     setLanguage(next);
     setStoredLanguage(next);
+  };
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    setStoredSoundEnabled(next);
+    if (next) playSelect();
   };
 
   useEffect(() => {
@@ -292,6 +321,15 @@ export default function Game() {
         <div className="flex items-center gap-2">
           <button type="button" onClick={toggleLanguage} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-black text-[#f5bd4d] transition hover:border-[#f5bd4d]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5bd4d]">
             <Languages className="h-4 w-4" /> {t.languageShort}
+          </button>
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? t.soundOn : t.soundOff}
+            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 text-xs font-black text-[#f5bd4d] transition hover:border-[#f5bd4d]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5bd4d]"
+          >
+            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            <span className="hidden sm:inline">{soundEnabled ? t.soundOn : t.soundOff}</span>
           </button>
           {!user ? (
             <Button type="button" onClick={() => void login()} disabled={isLoading} className="min-h-10 rounded-full bg-[#f5bd4d] px-3 text-xs font-black text-[#28113f] hover:bg-[#ffd36e]">
@@ -355,7 +393,7 @@ export default function Game() {
                 <p className="mt-1 text-xs text-[#a997b9]">{t.how1}</p>
               </div>
               {phase === 'playing' && (
-                <button type="button" onClick={() => { setPhase('paused'); setSelected(null); }} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/15 px-3 text-xs font-bold text-[#eadcf2] transition hover:border-[#f5bd4d]/50 hover:text-white">
+                <button type="button" onClick={() => { if (soundEnabled) playPause(); setPhase('paused'); setSelected(null); }} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-white/15 px-3 text-xs font-bold text-[#eadcf2] transition hover:border-[#f5bd4d]/50 hover:text-white">
                   <Pause className="h-4 w-4" /> {t.pause}
                 </button>
               )}
@@ -378,8 +416,8 @@ export default function Game() {
                       type="button"
                       aria-label={`${meta.label}, ${rowIndex + 1}, ${colIndex + 1}`}
                       onClick={() => handleTileClick(rowIndex, colIndex)}
-                      disabled={phase !== 'playing' || resolving}
-                      className={`group relative aspect-square min-w-0 overflow-hidden rounded-[0.65rem] border text-white transition duration-150 ease-out sm:rounded-xl ${isSelected ? 'z-10 scale-[1.08] border-[#fff4c8] ring-2 ring-[#f5bd4d] ring-offset-2 ring-offset-[#12091f]' : 'border-white/20'} ${phase === 'playing' ? 'active:scale-95' : 'opacity-90'}`}
+                      disabled={resolving}
+                      className={`pi-match3-tile group relative aspect-square min-w-0 overflow-hidden rounded-[0.65rem] border text-white transition duration-150 ease-out sm:rounded-xl ${isSelected ? 'z-10 scale-[1.08] border-[#fff4c8] ring-2 ring-[#f5bd4d] ring-offset-2 ring-offset-[#12091f]' : 'border-white/20'} ${phase === 'playing' ? 'active:scale-95' : 'opacity-90'}`}
                       style={{ background: `linear-gradient(145deg, ${meta.edge} 0%, ${meta.face} 22%, ${meta.face} 70%, #32164f 100%)`, boxShadow: isSelected ? `0 0 22px ${meta.glow}` : `inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px rgba(0,0,0,.22)` }}
                     >
                       <span className="absolute inset-x-1 top-1 h-1/4 rounded-full bg-white/25 blur-[2px]" />
