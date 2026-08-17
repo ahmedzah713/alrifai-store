@@ -223,3 +223,11 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* Pi Match-3 interaction primitives: tiles must feel immediate on touch devices and never trigger text selection or browser gestures. */
+.pi-match3-tile {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
