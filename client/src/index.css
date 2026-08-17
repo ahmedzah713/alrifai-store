@@ -175,3 +175,51 @@
     }
   }
 }
+
+
+/* Pi Match-3 style reminder: plum-black surfaces, Pi gold action color, Manrope body copy, Space Grotesk display type, tactile focus states, and restrained motion. */
+
+@layer base {
+  html {
+    background: #12091f;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    background: #12091f;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  button {
+    font-family: 'Space Grotesk', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #f5bd4d;
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
