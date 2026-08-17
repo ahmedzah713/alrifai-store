@@ -231,3 +231,55 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
+
+@keyframes tilePulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  45% { transform: scale(0.92); filter: brightness(1.45); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes piExplosionParticle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.35); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--burst-x, 30px)), calc(-50% + var(--burst-y, -42px))) scale(0.05); }
+}
+
+@keyframes piAchievementPop {
+  0% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+  15%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+.pi-explosion-particle {
+  animation: piExplosionParticle 560ms cubic-bezier(.23, 1, .32, 1) forwards;
+}
+
+.pi-achievement-pop {
+  animation: piAchievementPop 2400ms cubic-bezier(.23, 1, .32, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-explosion-particle,
+  .pi-achievement-pop,
+  .pi-match3-tile {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes piComboFlash {
+  0% { opacity: 0; transform: translateY(-50%) scale(0.72); }
+  18% { opacity: 1; transform: translateY(-50%) scale(1.08); }
+  38%, 78% { opacity: 1; transform: translateY(-50%) scale(1); }
+  100% { opacity: 0; transform: translateY(-50%) scale(0.94); }
+}
+
+.pi-combo-flash {
+  animation: piComboFlash 760ms cubic-bezier(.23, 1, .32, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-combo-flash {
+    animation: none !important;
+  }
+}
